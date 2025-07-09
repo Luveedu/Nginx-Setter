@@ -61,12 +61,15 @@ echo -e "\n--- Applying Nginx global performance optimizations ---"
 # Backup original nginx.conf
 cp /etc/nginx/nginx.conf /etc/nginx/nginx.conf.bak
 
-# Use sed to add optimization directives to the http block
-# This is a bit fragile if nginx.conf structure changes significantly
-sed -i '/http {/a \
-    worker_processes auto;\
+# Modify worker_connections in the events block
+# This finds the 'events {' line and inserts 'worker_connections 1024;' after it.
+sed -i '/events {/a \
     worker_connections 1024;\
-\
+' /etc/nginx/nginx.conf
+
+# Add http block specific optimizations
+# This finds the 'http {' line and inserts the directives after it.
+sed -i '/http {/a \
     sendfile on;\
     tcp_nopush on;\
     tcp_nodelay on;\
@@ -81,6 +84,10 @@ sed -i '/http {/a \
     gzip_http_version 1.1;\
     gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript image/svg+xml;\
 ' /etc/nginx/nginx.conf
+
+# Note: 'worker_processes auto;' is typically already present in the main context
+# of a default nginx.conf. If it's not, you might need to add it manually to the top.
+# This script assumes it's already there or Nginx will use a sensible default.
 
 # Test Nginx configuration
 echo "Testing Nginx configuration..."
@@ -131,7 +138,7 @@ echo "${FTP_USER}" | tee -a /etc/vsftpd.userlist > /dev/null
 # --- 4. Create FTP User and Set Permissions ---
 echo -e "\n--- Creating FTP user '${FTP_USER}' and setting permissions ---"
 
-# Create the user if they don't exist, and add to www-data group
+# Create the user if they don't exist, and set password
 if id "${FTP_USER}" &>/dev/null; then
     echo "User '${FTP_USER}' already exists. Setting new password."
     echo "${FTP_USER}:${FTP_USER_PASS}" | chpasswd
