@@ -61,6 +61,9 @@ echo -e "\n--- Applying Nginx global performance optimizations ---"
 # Backup original nginx.conf
 cp /etc/nginx/nginx.conf /etc/nginx/nginx.conf.bak
 
+# Remove any existing worker_connections lines to prevent duplicates
+sed -i '/worker_connections/d' /etc/nginx/nginx.conf
+
 # Modify worker_connections in the events block
 # This finds the 'events {' line and inserts 'worker_connections 1024;' after it.
 sed -i '/events {/a \
